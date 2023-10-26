@@ -10,6 +10,11 @@ import (
 	"github.com/eventscompass/events-service/src/internal"
 )
 
+// REST implements the [service.CloudService] interface.
+func (s *EventsService) REST() http.Handler {
+	return s.restHandler
+}
+
 // initREST initializes the handler for the rest server part of the service.
 // This function creates a router and registers with that router the handlers
 // for the http endpoints.
@@ -28,7 +33,7 @@ func (s *EventsService) initREST() error {
 		fmt.Fprintln(w, "I am healthy and strong, buddy!")
 	}))
 
-	s.RegisterREST(mux)
+	s.restHandler = mux
 	return nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/caarlos0/env/v6"
 
@@ -17,8 +18,15 @@ import (
 type EventsService struct {
 	service.BaseService
 
+	// restHandler is used to start an http server, that serves
+	// http requests to the rest api of the service.
+	restHandler http.Handler
+
+	// eventsDB is used to read and store events in a container database.
 	eventsDB internal.EventsContainer
-	cfg      *Config
+
+	// cfg is used to configure the service.
+	cfg *Config
 }
 
 // Init implements the [CloudService] interface.
@@ -30,6 +38,7 @@ func (s *EventsService) Init(ctx context.Context) error {
 	}
 	s.cfg = &cfg
 
+	// Init the database layer.
 	mongoCfg := mongodb.Config(s.cfg.EventsDB)
 	db, err := mongodb.NewMongoDBContainer(ctx, &mongoCfg)
 	if err != nil {
@@ -37,6 +46,7 @@ func (s *EventsService) Init(ctx context.Context) error {
 	}
 	s.eventsDB = db
 
+	// Init the rest API of the service.
 	if err := s.initREST(); err != nil {
 		return fmt.Errorf("init rest: %w", err)
 	}

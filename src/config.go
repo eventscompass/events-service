@@ -2,13 +2,13 @@ package main
 
 type Config struct {
 	// EventsDB encapsulates the configuration of the database
-	// layer storing the events.
-	EventsDB EventsDBConfig
+	// layer used by the service.
+	EventsDB DBConfig
 }
 
-// EventsDB encapsulates the configuration of the database layer storing the
-// events.
-type EventsDBConfig struct {
+// DBConfig encapsulates the configuration of the database layer
+// used by the service.
+type DBConfig struct {
 	Host       string `env:"EVENTS_MONGO_HOST" envDefault:"mongodb"`
 	Port       int    `env:"EVENTS_MONGO_PORT" envDefault:"27017"`
 	Username   string `env:"EVENTS_MONGO_USERNAME" envDefault:"user"`
