@@ -3,11 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi"
 
 	"github.com/eventscompass/events-service/src/internal"
+	"github.com/eventscompass/service-framework/pubsub"
+	"github.com/eventscompass/service-framework/service"
 )
 
 // REST implements the [service.CloudService] interface.
@@ -19,7 +22,10 @@ func (s *EventsService) REST() http.Handler {
 // This function creates a router and registers with that router the handlers
 // for the http endpoints.
 func (s *EventsService) initREST() error {
-	restHandler := &restHandler{eventsDB: s.eventsDB}
+	restHandler := &restHandler{
+		eventsDB:  s.eventsDB,
+		eventsBus: s.eventsBus,
+	}
 	mux := chi.NewMux()
 
 	// API routes.
@@ -41,7 +47,8 @@ func (s *EventsService) initREST() error {
 // the business logic. Every rest endpoint exposed by the server will be served
 // by calling one of the handler methods.
 type restHandler struct {
-	eventsDB internal.EventsContainer
+	eventsDB  internal.EventsContainer
+	eventsBus service.MessageBus
 }
 
 func (h *restHandler) create(w http.ResponseWriter, r *http.Request) {
@@ -59,6 +66,19 @@ func (h *restHandler) create(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// Publish to the message queue.
+	payload := &pubsub.EventCreated{
+		ID:         e.ID,
+		Name:       e.Name,
+		LocationID: e.Location.Name,
+		Start:      e.StartDate,
+		End:        e.EndDate,
+	}
+	if err := h.eventsBus.Publish(ctx, payload); err != nil {
+		// log the error.. no idea how to handle it, but obviously it should be handled!
+		log.Println("failed to publish message:", *payload, err)
 	}
 
 	// Write the response.

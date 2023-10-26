@@ -10,6 +10,7 @@ import (
 
 	"github.com/eventscompass/events-service/src/internal"
 	"github.com/eventscompass/events-service/src/internal/mongodb"
+	"github.com/eventscompass/service-framework/pubsub/rabbitmq"
 	"github.com/eventscompass/service-framework/service"
 )
 
@@ -22,6 +23,9 @@ type EventsService struct {
 	// http requests to the rest api of the service.
 	restHandler http.Handler
 
+	// eventBus is used for publishing and subscribing to messages.
+	eventsBus service.MessageBus
+
 	// eventsDB is used to read and store events in a container database.
 	eventsDB internal.EventsContainer
 
@@ -29,7 +33,7 @@ type EventsService struct {
 	cfg *Config
 }
 
-// Init implements the [CloudService] interface.
+// Init implements the [service.CloudService] interface.
 func (s *EventsService) Init(ctx context.Context) error {
 	// Parse the env variables.
 	var cfg Config
@@ -46,6 +50,13 @@ func (s *EventsService) Init(ctx context.Context) error {
 	}
 	s.eventsDB = db
 
+	// Init the message bus,
+	bus, err := rabbitmq.NewAMQPBus(&s.cfg.EventsMQ, eventsExchangeMQ)
+	if err != nil {
+		return fmt.Errorf("init mq: %w", err)
+	}
+	s.eventsBus = bus
+
 	// Init the rest API of the service.
 	if err := s.initREST(); err != nil {
 		return fmt.Errorf("init rest: %w", err)
@@ -56,3 +67,7 @@ func (s *EventsService) Init(ctx context.Context) error {
 func main() {
 	service.Start(&EventsService{})
 }
+
+var (
+	eventsExchangeMQ string = "events"
+)

@@ -1,8 +1,10 @@
 # github.com/caarlos0/env/v6 v6.10.1
 ## explicit; go 1.17
 github.com/caarlos0/env/v6
-# github.com/eventscompass/service-framework v0.0.0-20231026094617-4b587a1ec0af
+# github.com/eventscompass/service-framework v0.0.0-20231026153331-2fe51e5fcf40
 ## explicit; go 1.21.2
+github.com/eventscompass/service-framework/pubsub
+github.com/eventscompass/service-framework/pubsub/rabbitmq
 github.com/eventscompass/service-framework/service
 # github.com/go-chi/chi v1.5.5
 ## explicit; go 1.16
@@ -29,6 +31,9 @@ github.com/klauspost/compress/zstd/internal/xxhash
 # github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe
 ## explicit
 github.com/montanaflynn/stats
+# github.com/rabbitmq/amqp091-go v1.9.0
+## explicit; go 1.16
+github.com/rabbitmq/amqp091-go
 # github.com/xdg-go/pbkdf2 v1.0.0
 ## explicit; go 1.9
 github.com/xdg-go/pbkdf2

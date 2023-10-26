@@ -12,10 +12,17 @@ services:
       - EVENTS_MONGO_DATABASE=events
       - EVENTS_MONGO_COLLECTION=events
       - HTTP_SERVER_LISTEN=:80
+      - MESSAGE_BUS_HOST=rabbitmq
+      - MESSAGE_BUS_PORT=5672
+      - MESSAGE_BUS_USERNAME=eventsservice
+      - MESSAGE_BUS_PASSWORD=rabbitmq_password
     ports:
       - "10080:80"
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
   mongodb:
     image: mongo:4.4.4
@@ -27,3 +34,18 @@ services:
       - MONGO_INITDB_DATABASE=events
     # volumes:
     #   - ./db-data/mogno:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3.12.7-alpine
+    expose:
+      - 5672
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    environment:
+      - RABBITMQ_DEFAULT_USER=eventsservice
+      - RABBITMQ_DEFAULT_PASS=rabbitmq_password
+    # volumes:
+    #   -
