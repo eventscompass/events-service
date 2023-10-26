@@ -1,15 +1,9 @@
 package main
 
-import "github.com/eventscompass/service-framework/service"
-
 type Config struct {
 	// EventsDB encapsulates the configuration of the database
 	// layer storing the events.
 	EventsDB EventsDBConfig
-
-	// REST encapsulates the configuration for the rest component
-	// of the service.
-	REST service.RESTConfig
 }
 
 // EventsDB encapsulates the configuration of the database layer storing the

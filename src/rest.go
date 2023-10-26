@@ -28,7 +28,7 @@ func (s *EventsService) initREST() error {
 		fmt.Fprintln(w, "I am healthy and strong, buddy!")
 	}))
 
-	s.RegisterREST(mux, &s.cfg.REST)
+	s.RegisterREST(mux)
 	return nil
 }
 
