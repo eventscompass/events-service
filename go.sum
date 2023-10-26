@@ -2,8 +2,8 @@ github.com/caarlos0/env/v6 v6.10.1 h1:t1mPSxNpei6M5yAeu1qtRdPAK29Nbcf/n3G7x+b3/I
 github.com/caarlos0/env/v6 v6.10.1/go.mod h1:hvp/ryKXKipEkcuYjs9mI4bBCg+UI0Yhgm5Zu0ddvwc=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/eventscompass/service-framework v0.0.0-20231024214704-7716823b7850 h1:rKX/Br80BgdvRzc9qP1RfIxje24WA0gu8ynmywghUpo=
-github.com/eventscompass/service-framework v0.0.0-20231024214704-7716823b7850/go.mod h1:9b4yBFJ48iIcFtmhTyFC5ADuRHCvGSVIKJHPxqz3epw=
+github.com/eventscompass/service-framework v0.0.0-20231026094617-4b587a1ec0af h1:FudOSZSGFi7HCQSNVGjuRDdaG5DG59ckgDJKEXqbAQI=
+github.com/eventscompass/service-framework v0.0.0-20231026094617-4b587a1ec0af/go.mod h1:AXx1naCwIYA98Vt/cRe2WjTTsGf1tkQcfcRYpvXIPZc=
 github.com/go-chi/chi v1.5.5 h1:vOB/HbEMt9QqBqErz07QehcOKHaWFtuj87tTDVz2qXE=
 github.com/go-chi/chi v1.5.5/go.mod h1:C9JqLr3tIYjDOZpzn+BCuxY8z8vmca43EeMgyZt7irw=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=

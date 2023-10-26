@@ -4,7 +4,7 @@ go 1.21.2
 
 require (
 	github.com/caarlos0/env/v6 v6.10.1
-	github.com/eventscompass/service-framework v0.0.0-20231024214704-7716823b7850
+	github.com/eventscompass/service-framework v0.0.0-20231026094617-4b587a1ec0af
 	github.com/go-chi/chi v1.5.5
 	go.mongodb.org/mongo-driver v1.12.1
 )

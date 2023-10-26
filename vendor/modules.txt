@@ -1,7 +1,7 @@
 # github.com/caarlos0/env/v6 v6.10.1
 ## explicit; go 1.17
 github.com/caarlos0/env/v6
-# github.com/eventscompass/service-framework v0.0.0-20231024214704-7716823b7850
+# github.com/eventscompass/service-framework v0.0.0-20231026094617-4b587a1ec0af
 ## explicit; go 1.21.2
 github.com/eventscompass/service-framework/service
 # github.com/go-chi/chi v1.5.5
