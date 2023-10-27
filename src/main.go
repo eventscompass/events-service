@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/caarlos0/env/v6"
@@ -39,7 +38,7 @@ func (s *EventsService) Init(ctx context.Context) error {
 	// Parse the env variables.
 	var cfg Config
 	if err := env.Parse(&cfg); err != nil {
-		log.Fatalf("Failed to parse environment variables: %v", err)
+		return fmt.Errorf("%w: env parse: %v", service.ErrUnexpected, err)
 	}
 	s.cfg = &cfg
 
@@ -59,9 +58,8 @@ func (s *EventsService) Init(ctx context.Context) error {
 	s.eventsBus = bus
 
 	// Init the rest API of the service.
-	if err := s.initREST(); err != nil {
-		return fmt.Errorf("init rest: %w", err)
-	}
+	s.initREST()
+
 	return nil
 }
 

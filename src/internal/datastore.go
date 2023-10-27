@@ -8,21 +8,29 @@ import (
 // EventsContainer abstracts the database layer for storing events.
 type EventsContainer interface {
 
-	// Create creates a new event in the container. This method
-	// returns the ID associated with the created event.
+	// Create creates a new entry in the given collection in the
+	// container. This method returns the ID associated with the
+	// created entry.
 	Create(_ context.Context, e Event) (string, error)
 
-	// GetByID retrieves the event with the given id from the container.
+	// GetByID retrieves the entry with the given id from the
+	// given collection in the container. This function returns
+	// [service.ErrNotFound] if the requested item is not in the
+	// container.
 	GetByID(_ context.Context, id string) (Event, error)
 
-	// GetByName retrieves the event with the given name from the container.
+	// GetByID retrieves the entry with the given name from the
+	// given collection in the container. This function returns
+	// [service.ErrNotFound] if the requested item is not in the
+	// container.
 	GetByName(_ context.Context, name string) (Event, error)
 
-	// GetAll retrieves all events from the container.
+	// GetAll retrieves all entries from the given collection
+	// from the container.
 	GetAll(_ context.Context) ([]Event, error)
 }
 
-// Event represents a single document entry in the container.
+// Event represents an event entry in the container.
 type Event struct {
 	ID        string
 	Name      string
@@ -32,8 +40,9 @@ type Event struct {
 	Location  Location
 }
 
-// Location represents a real location with opening and closing time.
+// Location represents a location entry in the container.
 type Location struct {
+	ID        string
 	Name      string
 	Address   string
 	Country   string
@@ -48,3 +57,9 @@ type Hall struct {
 	Location string `json:"location,omitempty"`
 	Capacity int    `json:"capacity"`
 }
+
+var (
+	// Collections.
+	EventsCollection    string = "events"
+	LocationsCollection string = "locations"
+)

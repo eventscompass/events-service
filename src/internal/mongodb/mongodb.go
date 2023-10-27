@@ -43,10 +43,10 @@ func NewMongoDBContainer(ctx context.Context, cfg *Config) (*MongoDBContainer, e
 	})
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		return nil, fmt.Errorf("mongo connect: %w", err)
+		return nil, service.Unexpected(ctx, fmt.Errorf("mongo connect: %w", err))
 	}
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
-		return nil, fmt.Errorf("ping mongo: %w", err)
+		return nil, service.Unexpected(ctx, fmt.Errorf("ping mongo: %w", err))
 	}
 
 	database := client.Database(cfg.Database)
@@ -62,7 +62,7 @@ func NewMongoDBContainer(ctx context.Context, cfg *Config) (*MongoDBContainer, e
 func (m *MongoDBContainer) Create(ctx context.Context, e Event) (string, error) {
 	_, err := m.collection.InsertOne(ctx, e)
 	if err != nil {
-		return "", service.Unexpected(ctx, err)
+		return "", service.Unexpected(ctx, fmt.Errorf("insert one: %w", err))
 	}
 	return e.ID, nil
 }
@@ -81,13 +81,13 @@ func (m *MongoDBContainer) GetByName(ctx context.Context, name string) (Event, e
 func (m *MongoDBContainer) GetAll(ctx context.Context) ([]Event, error) {
 	cursor, err := m.collection.Find(ctx, bson.D{})
 	if err != nil {
-		return nil, service.Unexpected(ctx, err)
+		return nil, service.Unexpected(ctx, fmt.Errorf("find: %w", err))
 	}
 	defer cursor.Close(ctx)
 
 	events := make([]Event, 0)
 	if err := cursor.All(ctx, &events); err != nil {
-		return nil, service.Unexpected(ctx, err)
+		return nil, service.Unexpected(ctx, fmt.Errorf("cursor all: %w", err))
 	}
 	return events, nil
 }
@@ -102,12 +102,12 @@ func (m *MongoDBContainer) findOne(
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return Event{}, fmt.Errorf("%w: %v", service.ErrNotFound, err)
 		}
-		return Event{}, service.Unexpected(ctx, err)
+		return Event{}, service.Unexpected(ctx, fmt.Errorf("find one: %w", err))
 	}
 
 	var e Event
 	if err := one.Decode(&e); err != nil {
-		return Event{}, service.Unexpected(ctx, err)
+		return Event{}, service.Unexpected(ctx, fmt.Errorf("decode: %w", err))
 	}
 	return e, nil
 }
