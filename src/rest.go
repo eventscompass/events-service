@@ -21,7 +21,7 @@ func (s *EventsService) REST() http.Handler {
 // initREST initializes the handler for the rest server part of the service.
 // This function creates a router and registers with that router the handlers
 // for the http endpoints.
-func (s *EventsService) initREST() error {
+func (s *EventsService) initREST() {
 	restHandler := &restHandler{
 		eventsDB:  s.eventsDB,
 		eventsBus: s.eventsBus,
@@ -40,7 +40,6 @@ func (s *EventsService) initREST() error {
 	}))
 
 	s.restHandler = mux
-	return nil
 }
 
 // restHandler handles http requests. It is the bridge between the rest api and
@@ -57,14 +56,14 @@ func (h *restHandler) create(w http.ResponseWriter, r *http.Request) {
 	// Decode the request body.
 	var e internal.Event
 	if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		service.HTTPError(ctx, w, fmt.Errorf("%w: %v", service.ErrBadRequest, err))
 		return
 	}
 
 	// Create the event.
 	id, err := h.eventsDB.Create(ctx, e)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HTTPError(ctx, w, err)
 		return
 	}
 
@@ -77,7 +76,8 @@ func (h *restHandler) create(w http.ResponseWriter, r *http.Request) {
 		End:        e.EndDate,
 	}
 	if err := h.eventsBus.Publish(ctx, payload); err != nil {
-		// log the error.. no idea how to handle it, but obviously it should be handled!
+		// TODO: handle this error somehow. Check this out:
+		// https://cloud.google.com/pubsub/docs/samples/pubsub-publish-with-error-handler
 		log.Println("failed to publish message:", *payload, err)
 	}
 
@@ -94,7 +94,7 @@ func (h *restHandler) readByID(w http.ResponseWriter, r *http.Request) {
 
 	event, err := h.eventsDB.GetByID(ctx, id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HTTPError(ctx, w, err)
 		return
 	}
 
@@ -110,7 +110,7 @@ func (h *restHandler) readByName(w http.ResponseWriter, r *http.Request) {
 
 	event, err := h.eventsDB.GetByName(ctx, name)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HTTPError(ctx, w, err)
 		return
 	}
 
@@ -123,7 +123,7 @@ func (h *restHandler) readAll(w http.ResponseWriter, r *http.Request) {
 
 	events, err := h.eventsDB.GetAll(ctx)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		service.HTTPError(ctx, w, err)
 		return
 	}
 
