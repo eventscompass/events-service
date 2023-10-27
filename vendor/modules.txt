@@ -1,7 +1,7 @@
 # github.com/caarlos0/env/v6 v6.10.1
 ## explicit; go 1.17
 github.com/caarlos0/env/v6
-# github.com/eventscompass/service-framework v0.0.0-20231026153331-2fe51e5fcf40
+# github.com/eventscompass/service-framework v0.0.0-20231027134356-66d539d0e3bb
 ## explicit; go 1.21.2
 github.com/eventscompass/service-framework/pubsub
 github.com/eventscompass/service-framework/pubsub/rabbitmq

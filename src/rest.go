@@ -84,9 +84,6 @@ func (h *restHandler) create(w http.ResponseWriter, r *http.Request) {
 	// Write the response.
 	w.Header().Set("location", fmt.Sprintf("%s/id/%s", r.URL.Path, id))
 	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(map[string]string{
-		"id": string(id),
-	})
 }
 
 func (h *restHandler) readByID(w http.ResponseWriter, r *http.Request) {
