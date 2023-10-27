@@ -10,6 +10,7 @@ import (
 
 	"github.com/eventscompass/events-service/src/internal"
 	"github.com/eventscompass/events-service/src/internal/mongodb"
+	"github.com/eventscompass/service-framework/pubsub"
 	"github.com/eventscompass/service-framework/pubsub/rabbitmq"
 	"github.com/eventscompass/service-framework/service"
 )
@@ -51,7 +52,7 @@ func (s *EventsService) Init(ctx context.Context) error {
 	s.eventsDB = db
 
 	// Init the message bus,
-	bus, err := rabbitmq.NewAMQPBus(&s.cfg.EventsMQ, eventsExchangeMQ)
+	bus, err := rabbitmq.NewAMQPBus(&s.cfg.EventsMQ, pubsub.EventsExchange)
 	if err != nil {
 		return fmt.Errorf("init mq: %w", err)
 	}
@@ -67,7 +68,3 @@ func (s *EventsService) Init(ctx context.Context) error {
 func main() {
 	service.Start(&EventsService{})
 }
-
-var (
-	eventsExchangeMQ string = "events"
-)
