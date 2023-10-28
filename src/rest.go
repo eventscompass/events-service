@@ -54,14 +54,14 @@ func (h *restHandler) create(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// Decode the request body.
-	var e internal.Event
-	if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
+	var event internal.Event
+	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
 		service.HTTPError(ctx, w, fmt.Errorf("%w: %v", service.ErrBadRequest, err))
 		return
 	}
 
 	// Create the event.
-	id, err := h.eventsDB.Create(ctx, e)
+	err := h.eventsDB.Create(ctx, internal.EventsCollection, event)
 	if err != nil {
 		service.HTTPError(ctx, w, err)
 		return
@@ -69,11 +69,11 @@ func (h *restHandler) create(w http.ResponseWriter, r *http.Request) {
 
 	// Publish to the message queue.
 	payload := &pubsub.EventCreated{
-		ID:         e.ID,
-		Name:       e.Name,
-		LocationID: e.Location.Name,
-		Start:      e.StartDate,
-		End:        e.EndDate,
+		ID:         event.ID,
+		Name:       event.Name,
+		LocationID: event.Location.ID,
+		Start:      event.StartDate,
+		End:        event.EndDate,
 	}
 	if err := h.eventsBus.Publish(ctx, payload); err != nil {
 		// TODO: handle this error somehow. Check this out:
@@ -82,7 +82,7 @@ func (h *restHandler) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Write the response.
-	w.Header().Set("location", fmt.Sprintf("%s/id/%s", r.URL.Path, id))
+	w.Header().Set("location", fmt.Sprintf("%s/id/%s", r.URL.Path, event.ID))
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -92,12 +92,14 @@ func (h *restHandler) readByID(w http.ResponseWriter, r *http.Request) {
 	// Decode the request key.
 	id := chi.URLParam(r, "id")
 
-	event, err := h.eventsDB.GetByID(ctx, id)
+	// Get the event.
+	event, err := h.eventsDB.GetByID(ctx, internal.EventsCollection, id)
 	if err != nil {
 		service.HTTPError(ctx, w, err)
 		return
 	}
 
+	// Write the response.
 	w.Header().Set("Content-Type", "application/json; charset=utf8")
 	_ = json.NewEncoder(w).Encode(&event)
 }
@@ -108,12 +110,14 @@ func (h *restHandler) readByName(w http.ResponseWriter, r *http.Request) {
 	// Decode the request key.
 	name := chi.URLParam(r, "name")
 
-	event, err := h.eventsDB.GetByName(ctx, name)
+	// Get the event.
+	event, err := h.eventsDB.GetByName(ctx, internal.EventsCollection, name)
 	if err != nil {
 		service.HTTPError(ctx, w, err)
 		return
 	}
 
+	// Write the response.
 	w.Header().Set("Content-Type", "application/json; charset=utf8")
 	_ = json.NewEncoder(w).Encode(&event)
 }
@@ -121,12 +125,14 @@ func (h *restHandler) readByName(w http.ResponseWriter, r *http.Request) {
 func (h *restHandler) readAll(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	events, err := h.eventsDB.GetAll(ctx)
+	// Get all events.
+	events, err := h.eventsDB.GetAll(ctx, internal.EventsCollection)
 	if err != nil {
 		service.HTTPError(ctx, w, err)
 		return
 	}
 
+	// Write the response.
 	w.Header().Set("Content-Type", "application/json; charset=utf8")
 	_ = json.NewEncoder(w).Encode(&events)
 }

@@ -16,19 +16,17 @@ import (
 
 // Config holds configuration variables for connecting to a Mongo database.
 type Config struct {
-	Host       string
-	Port       int
-	Username   string
-	Password   string
-	Database   string
-	Collection string
+	Host     string
+	Port     int
+	Username string
+	Password string
+	Database string
 }
 
 // MongoDBContainer is a container backed by a Mongo database.
 type MongoDBContainer struct {
-	client     *mongo.Client
-	database   *mongo.Database
-	collection *mongo.Collection
+	client   *mongo.Client
+	database *mongo.Database
 }
 
 var _ EventsContainer = (*MongoDBContainer)(nil)
@@ -50,64 +48,116 @@ func NewMongoDBContainer(ctx context.Context, cfg *Config) (*MongoDBContainer, e
 	}
 
 	database := client.Database(cfg.Database)
-	collection := database.Collection(cfg.Collection)
 	return &MongoDBContainer{
-		client:     client,
-		database:   database,
-		collection: collection,
+		client:   client,
+		database: database,
 	}, nil
 }
 
-// Create creates a new entry in the database collection.
-func (m *MongoDBContainer) Create(ctx context.Context, e Event) (string, error) {
-	_, err := m.collection.InsertOne(ctx, e)
-	if err != nil {
-		return "", service.Unexpected(ctx, fmt.Errorf("insert one: %w", err))
+// Create implements the [EventsContainer] interface.
+func (m *MongoDBContainer) Create(
+	ctx context.Context,
+	collection string,
+	data any,
+) error {
+	c := m.database.Collection(collection)
+	if _, err := c.InsertOne(ctx, data); err != nil {
+		return service.Unexpected(ctx, fmt.Errorf("insert one: %w", err))
 	}
-	return e.ID, nil
+	return nil
 }
 
-// GetByID returns an entry from the database collection with the given ID.
-func (m *MongoDBContainer) GetByID(ctx context.Context, id string) (Event, error) {
-	return m.findOne(ctx, "id", id)
+// GetByID implements the [EventsContainer] interface.
+func (m *MongoDBContainer) GetByID(
+	ctx context.Context,
+	collection string,
+	id string,
+) (any, error) {
+	return m.findOne(ctx, collection, "id", id)
 }
 
-// GetByName returns an entry from the database collection with the given name.
-func (m *MongoDBContainer) GetByName(ctx context.Context, name string) (Event, error) {
-	return m.findOne(ctx, "name", name)
+// GetByName implements the [EventsContainer] interface.
+func (m *MongoDBContainer) GetByName(
+	ctx context.Context,
+	collection string,
+	name string,
+) (any, error) {
+	return m.findOne(ctx, collection, "name", name)
 }
 
-// GetAll returns all entries in the database collection.
-func (m *MongoDBContainer) GetAll(ctx context.Context) ([]Event, error) {
-	cursor, err := m.collection.Find(ctx, bson.D{})
+// GetAll implements the [EventsContainer] interface.
+func (m *MongoDBContainer) GetAll(
+	ctx context.Context,
+	collection string,
+) ([]any, error) {
+	// Get all elements from the requested collection.
+	c := m.database.Collection(collection)
+	cursor, err := c.Find(ctx, bson.D{})
 	if err != nil {
 		return nil, service.Unexpected(ctx, fmt.Errorf("find: %w", err))
 	}
 	defer cursor.Close(ctx)
 
-	events := make([]Event, 0)
-	if err := cursor.All(ctx, &events); err != nil {
-		return nil, service.Unexpected(ctx, fmt.Errorf("cursor all: %w", err))
+	res := make([]any, 0)
+
+	// Infer the type of the elements and decode them.
+	switch collection {
+	case EventsCollection:
+		var elems []Event
+		if err := cursor.All(ctx, &elems); err != nil {
+			return nil, service.Unexpected(ctx, fmt.Errorf("cursor all: %w", err))
+		}
+		for _, e := range elems {
+			res = append(res, e)
+		}
+	case LocationsCollection:
+		var elems []Location
+		if err := cursor.All(ctx, &elems); err != nil {
+			return nil, service.Unexpected(ctx, fmt.Errorf("cursor all: %w", err))
+		}
+		for _, e := range elems {
+			res = append(res, e)
+		}
+	default:
+		return nil, fmt.Errorf(
+			"%w: unknown collection %q", service.ErrNotAllowed, collection)
 	}
-	return events, nil
+
+	return res, nil
 }
 
 func (m *MongoDBContainer) findOne(
 	ctx context.Context,
+	collection string,
 	filterKey string,
 	filterValue any,
-) (Event, error) {
-	one := m.collection.FindOne(ctx, bson.M{filterKey: filterValue})
+) (any, error) {
+	// Get the element from the collection.
+	c := m.database.Collection(collection)
+	one := c.FindOne(ctx, bson.M{filterKey: filterValue})
 	if err := one.Err(); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return Event{}, fmt.Errorf("%w: %v", service.ErrNotFound, err)
+			return nil, fmt.Errorf("%w: %v", service.ErrNotFound, err)
 		}
-		return Event{}, service.Unexpected(ctx, fmt.Errorf("find one: %w", err))
+		return nil, service.Unexpected(ctx, fmt.Errorf("find one: %w", err))
 	}
 
-	var e Event
-	if err := one.Decode(&e); err != nil {
-		return Event{}, service.Unexpected(ctx, fmt.Errorf("decode: %w", err))
+	// Infer the type of the requested element and decode it.
+	switch collection {
+	case EventsCollection:
+		var elem Event
+		if err := one.Decode(&elem); err != nil {
+			return nil, service.Unexpected(ctx, fmt.Errorf("decode one: %w", err))
+		}
+		return elem, nil
+	case LocationsCollection:
+		var elem Location
+		if err := one.Decode(&elem); err != nil {
+			return nil, service.Unexpected(ctx, fmt.Errorf("decode one: %w", err))
+		}
+		return elem, nil
+	default:
+		return nil, fmt.Errorf(
+			"%w: unknown collection %q", service.ErrNotAllowed, collection)
 	}
-	return e, nil
 }

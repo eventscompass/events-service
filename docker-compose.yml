@@ -10,7 +10,6 @@ services:
       - EVENTS_MONGO_USERNAME=eventsservice
       - EVENTS_MONGO_PASSWORD=mongo_password
       - EVENTS_MONGO_DATABASE=events
-      - EVENTS_MONGO_COLLECTION=events
       - HTTP_SERVER_LISTEN=:80
       - MESSAGE_BUS_HOST=rabbitmq
       - MESSAGE_BUS_PORT=5672
