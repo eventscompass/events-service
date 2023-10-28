@@ -26,7 +26,7 @@ type EventsService struct {
 	// eventBus is used for publishing and subscribing to messages.
 	eventsBus service.MessageBus
 
-	// eventsDB is used to read and store events in a container database.
+	// eventsDB is used to read and store elements in a container database.
 	eventsDB internal.EventsContainer
 
 	// cfg is used to configure the service.

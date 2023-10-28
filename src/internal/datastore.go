@@ -11,50 +11,54 @@ type EventsContainer interface {
 	// Create creates a new entry in the given collection in the
 	// container. This method returns the ID associated with the
 	// created entry.
-	Create(_ context.Context, e Event) (string, error)
+	Create(_ context.Context, collection string, data any) error
 
 	// GetByID retrieves the entry with the given id from the
 	// given collection in the container. This function returns
 	// [service.ErrNotFound] if the requested item is not in the
-	// container.
-	GetByID(_ context.Context, id string) (Event, error)
+	// container. This function returns [service.ErrNotAllowed]
+	// if the requested collection is not in the container.
+	GetByID(_ context.Context, collection string, id string) (any, error)
 
 	// GetByID retrieves the entry with the given name from the
 	// given collection in the container. This function returns
 	// [service.ErrNotFound] if the requested item is not in the
-	// container.
-	GetByName(_ context.Context, name string) (Event, error)
+	// container. This function returns [service.ErrNotAllowed]
+	// if the requested collection is not in the container.
+	GetByName(_ context.Context, collection string, name string) (any, error)
 
 	// GetAll retrieves all entries from the given collection
-	// from the container.
-	GetAll(_ context.Context) ([]Event, error)
+	// from the container. This function returns
+	// [service.ErrNotAllowed] if the requested collection is not
+	// in the container.
+	GetAll(_ context.Context, collection string) ([]any, error)
 }
 
 // Event represents an event entry in the container.
 type Event struct {
-	ID        string
-	Name      string
-	Duration  time.Duration
-	StartDate time.Time
-	EndDate   time.Time
-	Location  Location
+	ID        string        `json:"id"`
+	Name      string        `json:"name"`
+	Duration  time.Duration `json:"duration"`
+	StartDate time.Time     `json:"start_date"`
+	EndDate   time.Time     `json:"end_date"`
+	Location  Location      `json:"location"`
 }
 
 // Location represents a location entry in the container.
 type Location struct {
-	ID        string
-	Name      string
-	Address   string
-	Country   string
-	OpenTime  time.Time
-	CloseTime time.Time
-	Halls     []Hall
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Address   string    `json:"address"`
+	Country   string    `json:"country"`
+	OpenTime  time.Time `json:"open_time"`
+	CloseTime time.Time `json:"close_time"`
+	Halls     []Hall    `json:"halls"`
 }
 
 // Hall is the room where the event will be taking place.
 type Hall struct {
 	Name     string `json:"name"`
-	Location string `json:"location,omitempty"`
+	Location string `json:"location"`
 	Capacity int    `json:"capacity"`
 }
 
