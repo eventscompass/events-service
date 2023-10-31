@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi"
@@ -35,7 +35,7 @@ func (s *EventsService) initREST() {
 	mux.Post("/api/events", restHandler.create)
 
 	// Health check.
-	mux.Handle("/health", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.Handle("/healthz", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "I am healthy and strong, buddy!")
 	}))
 
@@ -61,28 +61,36 @@ func (h *restHandler) create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create the event.
+	slog.Info("request to create event", slog.Any("event", event))
 	err := h.eventsDB.Create(ctx, internal.EventsCollection, event)
 	if err != nil {
 		service.HTTPError(ctx, w, err)
 		return
 	}
+	slog.Info("event successfully created")
 
 	// Publish to the message queue.
-	payload := &pubsub.EventCreated{
+	payload := pubsub.EventCreated{
 		ID:         event.ID,
 		Name:       event.Name,
 		LocationID: event.Location.ID,
 		Start:      event.StartDate,
 		End:        event.EndDate,
 	}
-	if err := h.eventsBus.Publish(ctx, payload); err != nil {
-		// TODO: handle this error somehow. Check this out:
-		// https://cloud.google.com/pubsub/docs/samples/pubsub-publish-with-error-handler
-		log.Println("failed to publish message:", *payload, err)
+	topic := pubsub.EventCreatedTopic
+	body, err := json.Marshal(&payload)
+	if err != nil {
+		slog.Error("failed to marshal for publishing", err)
+	}
+	if err == nil {
+		if pErr := h.eventsBus.Publish(ctx, topic, body); pErr != nil {
+			slog.Error("failed to publish", slog.String("topic", topic), pErr)
+		}
+		slog.Info("publish message", slog.String("topic", topic), slog.Any("message", payload))
 	}
 
 	// Write the response.
-	w.Header().Set("location", fmt.Sprintf("%s/id/%s", r.URL.Path, event.ID))
+	w.Header().Set("Location", fmt.Sprintf("%s/id/%s", r.URL.Path, event.ID))
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -93,6 +101,7 @@ func (h *restHandler) readByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	// Get the event.
+	slog.Info("request to read event", slog.String("id", id))
 	event, err := h.eventsDB.GetByID(ctx, internal.EventsCollection, id)
 	if err != nil {
 		service.HTTPError(ctx, w, err)
@@ -101,7 +110,9 @@ func (h *restHandler) readByID(w http.ResponseWriter, r *http.Request) {
 
 	// Write the response.
 	w.Header().Set("Content-Type", "application/json; charset=utf8")
-	_ = json.NewEncoder(w).Encode(&event)
+	if err := json.NewEncoder(w).Encode(&event); err != nil {
+		slog.Info("failed to write response", err)
+	}
 }
 
 func (h *restHandler) readByName(w http.ResponseWriter, r *http.Request) {
@@ -111,6 +122,7 @@ func (h *restHandler) readByName(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 
 	// Get the event.
+	slog.Info("request to read event", slog.String("name", name))
 	event, err := h.eventsDB.GetByName(ctx, internal.EventsCollection, name)
 	if err != nil {
 		service.HTTPError(ctx, w, err)
@@ -119,13 +131,16 @@ func (h *restHandler) readByName(w http.ResponseWriter, r *http.Request) {
 
 	// Write the response.
 	w.Header().Set("Content-Type", "application/json; charset=utf8")
-	_ = json.NewEncoder(w).Encode(&event)
+	if err := json.NewEncoder(w).Encode(&event); err != nil {
+		slog.Info("failed to write response", err)
+	}
 }
 
 func (h *restHandler) readAll(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// Get all events.
+	slog.Info("request to read all events")
 	events, err := h.eventsDB.GetAll(ctx, internal.EventsCollection)
 	if err != nil {
 		service.HTTPError(ctx, w, err)
@@ -134,5 +149,7 @@ func (h *restHandler) readAll(w http.ResponseWriter, r *http.Request) {
 
 	// Write the response.
 	w.Header().Set("Content-Type", "application/json; charset=utf8")
-	_ = json.NewEncoder(w).Encode(&events)
+	if err := json.NewEncoder(w).Encode(&events); err != nil {
+		slog.Info("failed to write response", err)
+	}
 }
