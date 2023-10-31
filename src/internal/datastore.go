@@ -2,15 +2,16 @@ package internal
 
 import (
 	"context"
+	"io"
 	"time"
 )
 
 // EventsContainer abstracts the database layer for storing events.
 type EventsContainer interface {
+	io.Closer
 
 	// Create creates a new entry in the given collection in the
-	// container. This method returns the ID associated with the
-	// created entry.
+	// container.
 	Create(_ context.Context, collection string, data any) error
 
 	// GetByID retrieves the entry with the given id from the

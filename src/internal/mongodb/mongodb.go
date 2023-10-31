@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"sync"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -29,7 +32,10 @@ type MongoDBContainer struct {
 	database *mongo.Database
 }
 
-var _ EventsContainer = (*MongoDBContainer)(nil)
+var (
+	_ EventsContainer = (*MongoDBContainer)(nil)
+	_ io.Closer       = (*MongoDBContainer)(nil)
+)
 
 // NewMongoDBContainer creates a new [MongoDBContainer] instance.
 func NewMongoDBContainer(ctx context.Context, cfg *Config) (*MongoDBContainer, error) {
@@ -39,11 +45,16 @@ func NewMongoDBContainer(ctx context.Context, cfg *Config) (*MongoDBContainer, e
 		Username: cfg.Username,
 		Password: cfg.Password,
 	})
-	client, err := mongo.Connect(ctx, clientOptions)
+
+	// Use once.Do to make sure that in this service we have only one mongodb
+	// connection, even if this function is called multiple times.
+	var err error
+	once.Do(func() { client, err = mongo.Connect(ctx, clientOptions) })
 	if err != nil {
 		return nil, service.Unexpected(ctx, fmt.Errorf("mongo connect: %w", err))
 	}
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
+		_ = client.Disconnect(ctx)
 		return nil, service.Unexpected(ctx, fmt.Errorf("ping mongo: %w", err))
 	}
 
@@ -96,7 +107,10 @@ func (m *MongoDBContainer) GetAll(
 	if err != nil {
 		return nil, service.Unexpected(ctx, fmt.Errorf("find: %w", err))
 	}
-	defer cursor.Close(ctx)
+
+	// Use context.Background() to ensure Close completes even if the ctx passed
+	// to this function has errored.
+	defer cursor.Close(context.Background())
 
 	res := make([]any, 0)
 
@@ -161,3 +175,18 @@ func (m *MongoDBContainer) findOne(
 			"%w: unknown collection %q", service.ErrNotAllowed, collection)
 	}
 }
+
+// Close implements the [io.Closer] interface.
+func (m *MongoDBContainer) Close() error {
+	// Disconnect the client by waiting up to 10 seconds for
+	// in-progress operations to complete.
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return m.client.Disconnect(ctx)
+}
+
+var (
+	// Use a singleton to make sure only one connection is open.
+	once   sync.Once
+	client *mongo.Client
+)
