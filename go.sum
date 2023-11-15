@@ -5,6 +5,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/eventscompass/service-framework v0.0.0-20231031143058-6f244b551d33 h1:NNdRLvqDppvEGMwlX8TVXUNBfcy7zjvTm6r3KHLyy0w=
 github.com/eventscompass/service-framework v0.0.0-20231031143058-6f244b551d33/go.mod h1:4IfkPioDxXVVojEkSoIizzv5B3y+dv8HtIqel3yh9Ho=
+github.com/eventscompass/service-framework v1.0.0 h1:LVwWc6aXS0ja3CJItSj2OBlgtDoge3Ht5rR+1b4v2rQ=
+github.com/eventscompass/service-framework v1.0.0/go.mod h1:4IfkPioDxXVVojEkSoIizzv5B3y+dv8HtIqel3yh9Ho=
 github.com/go-chi/chi v1.5.5 h1:vOB/HbEMt9QqBqErz07QehcOKHaWFtuj87tTDVz2qXE=
 github.com/go-chi/chi v1.5.5/go.mod h1:C9JqLr3tIYjDOZpzn+BCuxY8z8vmca43EeMgyZt7irw=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=

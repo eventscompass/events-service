@@ -64,7 +64,9 @@ type Hall struct {
 }
 
 var (
-	// Collections.
-	EventsCollection    string = "events"
-	LocationsCollection string = "locations"
+	// EventsCollection is the name of the collection where events will be stored.
+	EventsCollection = "events"
+
+	// LocationsCollection is the name of the collection where locations will be stored.
+	LocationsCollection = "locations"
 )
