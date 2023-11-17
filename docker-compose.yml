@@ -2,7 +2,7 @@ version: "3"
 
 services:
 
-  eventsservice:
+  events-service:
     build: .
     environment:
       - EVENTS_MONGO_HOST=mongodb
@@ -10,18 +10,25 @@ services:
       - EVENTS_MONGO_USERNAME=eventsservice
       - EVENTS_MONGO_PASSWORD=mongo_password
       - EVENTS_MONGO_DATABASE=events
-      - HTTP_SERVER_LISTEN=:80
+      - HTTP_SERVER_LISTEN=:8080
       - MESSAGE_BUS_HOST=rabbitmq
       - MESSAGE_BUS_PORT=5672
       - MESSAGE_BUS_USERNAME=eventsservice
       - MESSAGE_BUS_PASSWORD=rabbitmq_password
     ports:
-      - "10080:80"
+      - "8080:8080"
+    expose:
+      - 8080
     depends_on:
       mongodb:
         condition: service_started
       rabbitmq:
         condition: service_healthy
+    # Note that healthcheck will not work because this particular docker image
+    # is built from scratch and does not have curl installed.
+    # healthcheck:
+    #   test: curl -f http://localhost:8080/healthz || exit 1
+
 
   mongodb:
     image: mongo:4.4.4
@@ -48,3 +55,32 @@ services:
       - RABBITMQ_DEFAULT_PASS=rabbitmq_password
     # volumes:
     #   -
+
+  integration_tests:
+    container_name: integration_tests
+    image: golang:1.21.2-alpine
+    # When running integration tests with CircleCI we need to first run
+    # docker-compose, then copy the src code inside this container, and only
+    # after that run the tests. Thus, the container will simply sleep.
+    # command: go test ./src/... # for local tests uncomment this line
+    command: sleep infinity
+    working_dir: '/usr/service'
+    depends_on:
+      events-service-ready: # note that we are using another service for healthchecks.
+        condition: service_healthy
+      mongodb:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - '.:/usr/service'
+
+  # This service is used as a workaround for health checking.
+  events-service-ready:
+    image: alpine/curl:8.1.2
+    command: sleep infinity
+    healthcheck:
+      test: curl -f events-service:8080/healthz || exit 1
+      interval: 10s
+      timeout: 30s
+      retries: 5
