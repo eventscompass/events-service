@@ -97,6 +97,7 @@ jobs:
 
 
 workflows:
+  version: 2
 
   # The dev-pipeline describes the jobs and their order that need to be run when
   # submitting pull requests.
