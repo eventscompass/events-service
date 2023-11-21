@@ -130,18 +130,9 @@ workflows:
 
     jobs:
       - pull:
-          filters: # required since `integration_tests` has tag filters
-            tags:
-              only: /^v.*/
-
-      # Building and pushing should be run only after the integration tests have
-      # run successfully. Even though we run linter checks, unit tests and
-      # integration tests when creating pull requests, we should repeat the
-      # integration tests here to avoid flaky tests.
-      - integration_tests:
-          requires:
-            - pull
-          filters: # required since `build_and_push` has tag filters
+          filters: # required since `build-and_push` has filters
+            branches:
+              ignore: /.*/
             tags:
               only: /^v.*/
 
@@ -151,7 +142,7 @@ workflows:
       - build_and_push:
           context: DockerHub
           requires:
-            - integration_tests
+            - pull
           filters:
             # Don't trigger on PRs and merges.
             branches:
