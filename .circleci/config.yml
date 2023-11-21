@@ -123,18 +123,16 @@ workflows:
             - pull
 
   # The prod-pipeline describes the jobs and their order that need to be run
-  # when merging on the main branch.
+  # when the PR is merged to the main branch and the latest commit is tagged.
   prod-pipeline:
     when:
-      and:
-        - equal: [ main, << pipeline.git.branch >> ]
-        - matches: { pattern: "^v.*", value: << pipeline.git.tag >> }
+      # TODO: currently only tag filters
+      # equal: [ main, << pipeline.git.branch >> ]
+      matches: { pattern: "^v.*", value: << pipeline.git.tag >> }
 
     jobs:
       - pull:
           filters: # required since `build-and_push` has filters
-            branches:
-              ignore: /.*/
             tags:
               only: /^v.*/
 
@@ -146,9 +144,6 @@ workflows:
           requires:
             - pull
           filters:
-            # Don't trigger on PRs and merges.
-            branches:
-              ignore: /.*/
             # Trigger only on tags.
             tags:
               only: /^v.*/
