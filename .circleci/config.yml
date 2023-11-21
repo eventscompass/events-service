@@ -125,16 +125,19 @@ workflows:
   # The prod-pipeline describes the jobs and their order that need to be run
   # when the PR is merged to the main branch and the latest commit is tagged.
   prod-pipeline:
-    when:
-      # TODO: currently only tag filters
-      # equal: [ main, << pipeline.git.branch >> ]
-      matches: { pattern: "^v.*", value: << pipeline.git.tag >> }
+    # # TODO: Make sure to run this pipeline only on the main branch and on git tag
+    # when:
+    #   and:
+    #     - equal: [ main, << pipeline.git.branch >> ]
+    #     - matches: { pattern: "^v.*", value: << pipeline.git.tag >> }
 
     jobs:
       - pull:
           filters: # required since `build-and_push` has filters
             tags:
               only: /^v.*/
+            branches:
+              ignore: /.*/
 
       # Note that this job should be run only on the main branch and only when
       # the commit was tagged. We also need to provide the `DockerHub` context
@@ -147,3 +150,6 @@ workflows:
             # Trigger only on tags.
             tags:
               only: /^v.*/
+            # Don't trigger on branches.
+            branches:
+              ignore: /.*/
