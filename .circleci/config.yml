@@ -129,7 +129,10 @@ workflows:
       equal: [ main, << pipeline.git.branch >> ]
 
     jobs:
-      - pull
+      - pull:
+          filters: # required since `integration_tests` has tag filters
+            tags:
+              only: /^v.*/
 
       # Building and pushing should be run only after the integration tests have
       # run successfully. Even though we run linter checks, unit tests and
@@ -138,6 +141,9 @@ workflows:
       - integration_tests:
           requires:
             - pull
+          filters: # required since `build_and_push` has tag filters
+            tags:
+              only: /^v.*/
 
       # Note that this job should be run only on the main branch and only when
       # the commit was tagged. We also need to provide the `DockerHub` context
