@@ -126,7 +126,9 @@ workflows:
   # when merging on the main branch.
   prod-pipeline:
     when:
-      equal: [ main, << pipeline.git.branch >> ]
+      and:
+        - equal: [ main, << pipeline.git.branch >> ]
+        - matches: { pattern: "^v.*", value: << pipeline.git.tag >> }
 
     jobs:
       - pull:
