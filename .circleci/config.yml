@@ -56,13 +56,11 @@ jobs:
   integration_tests:
     executor: go-exec
     steps:
-      # Attach the workspace to the current executor.
-      - attach_workspace:
-          at: .
+      # Checkout the source code.
+      - checkout
       # Allows docker commands to be run locally. This is required to get access
       # to docker from within the executor.
       - setup_remote_docker
-
       # The integration tests might require running additional services.
       # All of these are defined in the docker-compose file.
       - run: docker-compose up -d --build
@@ -125,27 +123,13 @@ workflows:
   # The prod-pipeline describes the jobs and their order that need to be run
   # when the PR is merged to the main branch and the latest commit is tagged.
   prod-pipeline:
-    # # TODO: Make sure to run this pipeline only on the main branch and on git tag
-    # when:
-    #   and:
-    #     - equal: [ main, << pipeline.git.branch >> ]
-    #     - matches: { pattern: "^v.*", value: << pipeline.git.tag >> }
-
     jobs:
-      - pull:
-          filters: # required since `build-and_push` has filters
-            tags:
-              only: /^v.*/
-            branches:
-              ignore: /.*/
 
       # Note that this job should be run only on the main branch and only when
       # the commit was tagged. We also need to provide the `DockerHub` context
       # variables in order to login to DockerHub.
       - build_and_push:
           context: DockerHub
-          requires:
-            - pull
           filters:
             # Trigger only on tags.
             tags:
