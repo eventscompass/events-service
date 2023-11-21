@@ -5,7 +5,6 @@ executors:
     docker:
       - image: cimg/go:1.21.4
 
-
 jobs:
 
   # Pull the src code from the repository and add it to the workspace.
@@ -101,8 +100,12 @@ jobs:
 
 workflows:
 
-  # The ci-pipeline describes the jobs that need to be run and their order.
-  ci-pipeline:
+  # The dev-pipeline describes the jobs and their order that need to be run when
+  # submitting pull requests.
+  dev-pipeline:
+    when:
+      not:
+        equal: [ main, << pipeline.git.branch >> ]
 
     jobs:
       # Pull the src code.
@@ -119,21 +122,34 @@ workflows:
           requires:
             - pull
 
-      # Building and pushing should be run only after all linter and test checks
-      # have passed successfully. Note that this job should be run only on the
-      # main branch and only on git tag. We also need to provide the `DockerHub`
-      # context variables in order to login to DockerHub.
-      - build_and_push:
-          context:
-            - DockerHub
+  # The prod-pipeline describes the jobs and their order that need to be run
+  # when merging on the main branch.
+  prod-pipeline:
+    when:
+      equal: [ main, << pipeline.git.branch >> ]
+
+    jobs:
+      - pull
+
+      # Building and pushing should be run only after the integration tests have
+      # run successfully. Even though we run linter checks, unit tests and
+      # integration tests when creating pull requests, we should repeat the
+      # integration tests here to avoid flaky tests.
+      - integration_tests:
           requires:
-            - lint
-            - unit_tests
+            - pull
+
+      # Note that this job should be run only on the main branch and only when
+      # the commit was tagged. We also need to provide the `DockerHub` context
+      # variables in order to login to DockerHub.
+      - build_and_push:
+          context: DockerHub
+          requires:
             - integration_tests
           filters:
+            # Don't trigger on PRs and merges.
             branches:
-              only:
-                - main
+              ignore: /.*/
+            # Trigger only on tags.
             tags:
-              only:
-                - /^v.*/
+              only: /^v.*/
