@@ -13,7 +13,6 @@ import (
 	"github.com/eventscompass/service-framework/service"
 )
 
-// REST implements the [service.CloudService] interface.
 func (s *EventsService) REST() http.Handler {
 	return s.restHandler
 }
