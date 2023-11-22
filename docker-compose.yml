@@ -3,6 +3,7 @@ version: "3"
 services:
 
   events-service:
+    container_name: events-service
     build: .
     environment:
       - EVENTS_MONGO_HOST=mongodb
@@ -29,8 +30,8 @@ services:
     # healthcheck:
     #   test: curl -f http://localhost:8080/healthz || exit 1
 
-
   mongodb:
+    container_name: mongodb
     image: mongo:4.4.4
     expose:
       - 27017
@@ -42,6 +43,7 @@ services:
     #   - ./db-data/mogno:/data/db
 
   rabbitmq:
+    container_name: rabbitmq
     image: rabbitmq:3.12.7-alpine
     expose:
       - 5672
@@ -66,7 +68,7 @@ services:
     command: sleep infinity
     working_dir: '/usr/service'
     depends_on:
-      events-service-ready: # note that we are using another service for healthchecks.
+      events-service-ready: # note we are using another service for healthchecks
         condition: service_healthy
       mongodb:
         condition: service_started
@@ -77,6 +79,7 @@ services:
 
   # This service is used as a workaround for health checking.
   events-service-ready:
+    container_name: events-service-ready
     image: alpine/curl:8.1.2
     command: sleep infinity
     healthcheck:

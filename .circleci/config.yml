@@ -5,6 +5,7 @@ executors:
     docker:
       - image: cimg/go:1.21.4
 
+# Each job specifies a number of steps which are executed in a docker container.
 jobs:
 
   # Pull the src code from the repository and add it to the workspace.
@@ -56,8 +57,9 @@ jobs:
   integration_tests:
     executor: go-exec
     steps:
-      # Checkout the source code.
-      - checkout
+      # Attach the workspace to the current executor.
+      - attach_workspace:
+          at: .
       # Allows docker commands to be run locally. This is required to get access
       # to docker from within the executor.
       - setup_remote_docker
@@ -76,6 +78,13 @@ jobs:
       # Stopping and removing containers, volumes, and networks makes sure tests
       # are not broken due to data that has persisted from the last test run.
       - run: docker-compose down --volumes --remove-orphans
+
+  # TODO: Add e2e tests.
+  # Run e2e tests.
+  e2e_tests:
+    executor: go-exec
+    steps:
+      - run: echo "e2e tests should be run"
 
   # Build a docker image with the service binary and push it to DockerHub.
   # The image will be tagged with the git branch tag. This job should be run
@@ -96,11 +105,11 @@ jobs:
       - run: docker push $DOCKERHUB_USER/events-service:$TAG
 
 
+# The workflows describe the jobs and the order in which they need to be run.
 workflows:
-  version: 2
 
-  # The dev-pipeline describes the jobs and their order that need to be run when
-  # submitting pull requests.
+  # The dev-pipeline is run when submitting pull requests. Linter checks are run
+  # and the src code is tested with unit and integration tests.
   dev-pipeline:
     when:
       not:
@@ -121,16 +130,44 @@ workflows:
           requires:
             - pull
 
-  # The prod-pipeline describes the jobs and their order that need to be run
-  # when the PR is merged to the main branch and the latest commit is tagged.
+  # The prod-pipeline is run when PRs are merged into the main branch. To make
+  # sure all components function properly e2e tests are run.
   prod-pipeline:
-    jobs:
+    when:
+      equal: [ main, << pipeline.git.branch >> ]
 
-      # Note that this job should be run only on the main branch and only when
-      # the commit was tagged. We also need to provide the `DockerHub` context
-      # variables in order to login to DockerHub.
+    jobs:
+      # Pull the src code.
+      - pull
+
+      # Run e2e tests.
+      - e2e_tests:
+          requires:
+            - pull
+
+  # The deploy-pipeline is run when a commit from the main branch is tagged.
+  # A docker image of the service is built and pushed to docker hub.
+  deploy-pipeline:
+    when:
+      and:
+        - equal: [ main, << pipeline.git.branch >> ]
+        - matches: { pattern: "^v.*", value: << pipeline.git.tag >> }
+
+    jobs:
+      # Pull the src code.
+      - pull:
+          filters: # required since `build_and_push` has filters
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+
+      # Note that we need to provide the `DockerHub` context variables in order
+      # to login to DockerHub.
       - build_and_push:
           context: DockerHub
+          requires:
+            - pull
           filters:
             # Trigger only on tags.
             tags:
