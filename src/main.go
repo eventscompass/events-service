@@ -51,7 +51,8 @@ func (s *EventsService) Init(ctx context.Context) error {
 	s.eventsDB = db
 
 	// Init the message bus,
-	bus, err := rabbitmq.NewAMQPBus(&s.cfg.EventsMQ, pubsub.EventsExchange)
+	busCfg := rabbitmq.Config(s.cfg.EventsMQ)
+	bus, err := rabbitmq.NewAMQPBus(&busCfg, pubsub.EventsExchange)
 	if err != nil {
 		return fmt.Errorf("init mq: %w", err)
 	}
